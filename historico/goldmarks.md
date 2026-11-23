@@ -4,3 +4,4 @@
 |---|---|---|---|
 | 23/11/2026 16h20 | Oposição ao pedido de marca (prazo de 60 dias após publicação na RPI) | Layout semana 23/11: fundo preto com fio dourado lateral, logo no topo, título + selo circular dourado, linha do tempo numerada, faixa dourada de CTA embaixo | https://www.instagram.com/p/DgGHmJPiBWj/ |
 | 23/11/2026 16h30 | Riscos de não registrar a marca (perder o nome, trocar a identidade, notificações) | Layout semana 23/11: fundo preto com fio dourado lateral, logo no topo, título + selo circular dourado, linha do tempo numerada, faixa dourada de CTA embaixo | media id 18127229033014401 (permalink ainda não disponível no Windsor) |
+| 23/11/2026 16h35 | Marca x nome empresarial x domínio (CNPJ e site não protegem a marca) | Layout semana 23/11: fundo preto com fio dourado lateral, logo no topo, título + selo circular dourado, linha do tempo numerada, faixa dourada de CTA embaixo | media id 18080491220572883 (permalink ainda não disponível no Windsor) |
