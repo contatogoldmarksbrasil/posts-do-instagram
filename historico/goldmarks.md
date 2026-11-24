@@ -12,3 +12,4 @@
 | 23/11/2026 16h50 | Tipos de marca (nominativa, figurativa, mista) | Formato: fundo branco com 3 linhas de exemplo visual | media id 18123631897988223 |
 | 23/11/2026 16h50 | Por que o INPI nega uma marca (indeferimento) | Formato: folha de pedido com carimbo INDEFERIDO | media id 17942397186403672 |
 | 24/11/2026 08h50 | Caducidade de marca (registro sem uso por 5 anos pode ser extinto) | Formato: quiz com 3 alternativas (A/B/C) em fundo preto, resposta certa em cartão dourado, quadro "Entenda" e pílula de contato | media id 17960033532269824 |
+| 24/11/2026 11h50 | Golpe da cobrança falsa em nome do INPI (boleto/PIX por mensagem; taxa oficial é a GRU) | Formato: fundo claro com faixa preta da logo no topo, mockup de tela de celular com mensagens falsas à esquerda + 3 cartões "sinais de golpe" à direita, quadro preto de orientação e pílula de contato | media id 18083505743385063 |
