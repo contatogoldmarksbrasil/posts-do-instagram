@@ -11,3 +11,4 @@
 | 23/11/2026 16h50 | MEI pode registrar marca (50% de desconto) | Formato: conversa de chat em fundo dourado | media id 18120638719790989 |
 | 23/11/2026 16h50 | Tipos de marca (nominativa, figurativa, mista) | Formato: fundo branco com 3 linhas de exemplo visual | media id 18123631897988223 |
 | 23/11/2026 16h50 | Por que o INPI nega uma marca (indeferimento) | Formato: folha de pedido com carimbo INDEFERIDO | media id 17942397186403672 |
+| 24/11/2026 08h50 | Caducidade de marca (registro sem uso por 5 anos pode ser extinto) | Formato: quiz com 3 alternativas (A/B/C) em fundo preto, resposta certa em cartão dourado, quadro "Entenda" e pílula de contato | media id 17960033532269824 |
