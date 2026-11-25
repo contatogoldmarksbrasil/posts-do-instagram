@@ -27,8 +27,12 @@ Fluxo testado de ponta a ponta num vídeo de teste 9:16:
 | Motion | `drawbox`/`drawtext` com expressões de tempo; para algo elaborado, Remotion (ainda não instalado) |
 
 Ambiente:
-- Script de instalação do ambiente instala `faster-whisper`, `scenedetect`, `opencv-python-headless`
-  e baixa o modelo `small` do Whisper. ffmpeg já vem no sistema.
+- Ferramentas de vídeo: instalar SOB DEMANDA na própria sessão quando for editar vídeo
+  (`pip install faster-whisper scenedetect opencv-python-headless`; baixar o modelo `small` do Whisper).
+  ffmpeg já vem no sistema.
+- IMPORTANTE: NÃO colocar isso num setup script do ambiente. Já aconteceu de um setup script de vídeo
+  FALHAR num container novo e quebrar TODAS as tarefas agendadas (posts da Gold Marks/Âncora, leads, RPI).
+  O ambiente roda as tarefas de postagem; se o setup script falhar, a sessão nem começa.
 - Rede liberada para o Hugging Face (huggingface.co, us.aws.cdn.hf.co, cas-server.xethub.hf.co…).
   Usar `HF_HUB_DISABLE_XET=1`.
 - Pegadinha: o faster-whisper não abre vídeo direto (conflito do PyAV) — extrair o áudio com
