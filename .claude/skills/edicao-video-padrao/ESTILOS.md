@@ -35,6 +35,14 @@ destaque em **serifado itálico dourado** (Playfair Display). Cards âmbar nos m
 Áudio suave com sininhos. Mapa `ACC` (palavra serifada por cena); `amber` = índices de cards âmbar.
 Bom para: marca como reputação/valor, clima sofisticado, classudo.
 
+## 6 — Impacto / minimalista bold (`6-impacto.html`, vibe `reel`)
+Molde dos vídeos @altralab que o usuário curtiu. Preto, MUITO minimalista, **tipografia gigante**
+branca com palavra-chave dourada, uma ideia por tela. **Gancho forte no início** (nome digitado
+"SUA MARCA" + carimbo vermelho "TEM DONO?" — equivalente ao balão deles). **Card inteiro** dourado
+("REGISTRE ANTES"), **número gigante** ("10 ANOS"). Cortes secos e punchy. Mapa `D` (hook/big/card/
+num/brand/cta) + `hl` (palavra dourada por cena). Trocar dourado por laranja = ajustar as cores no CSS.
+Bom para: ganchos de retenção, mensagens diretas e fortes, "quem registra primeiro leva".
+
 ## Como adaptar um engine a um roteiro novo
 1. Conte quantas falas tem o roteiro = número de cenas.
 2. Ajuste o mapa de desenho do engine (D / HL / ACC) para cobrir esses índices, 1..N.

@@ -35,6 +35,7 @@ quadro com Playwright/Chromium → ffmpeg junta com trilha sintetizada.
 | 3 | `3-reel.html`      | `reel`    | reel viral: raios de velocidade, legenda karaokê, ranking #1/#2/#3 |
 | 4 | `4-cinema3d.html`  | `cinema`  | cinematográfico: câmera voando em 3D (warp) pelas frases |
 | 5 | `5-premium.html`   | `premium` | premium/aesthetic: cards flutuando, bokeh âmbar, tipografia elegante |
+| 6 | `6-impacto.html`   | `reel`    | minimalista bold (estilo @altralab): preto, tipografia gigante, gancho forte, card/número gigantes |
 
 **Varie o estilo entre vídeos.** Cada engine tem `window.seek(t)` e `window.setTimeline(tl)`.
 

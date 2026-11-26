@@ -1,0 +1,80 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#050505;font-family:'Montserrat',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:radial-gradient(120% 90% at 50% 42%,#121010 0%,#070606 60%,#030303 100%)}
+.layer{position:absolute;inset:0}
+#grain{opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#vig{background:radial-gradient(115% 80% at 50% 44%,transparent 50%,rgba(0,0,0,.8) 100%)}
+#content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 90px;text-align:center}
+#logo{position:absolute;top:60px;left:50%;width:280px;transform:translateX(-50%);opacity:.42;z-index:5}
+#bar{position:absolute;left:0;bottom:0;height:7px;background:#D9B35A;box-shadow:0 0 18px #D9B35A;z-index:5}
+.w{display:inline-block;color:#fff;font-weight:900;line-height:1.05;letter-spacing:-1.5px}
+.hl{color:#D9B35A}
+</style></head>
+<body>
+<div id="stage">
+  <div class="layer" id="vig"></div>
+  <div class="layer" id="content"></div>
+  <div class="layer" id="grain"></div>
+  <img id="logo" src="logo.png">
+  <div id="bar"></div>
+</div>
+<script>
+let TL=null,SCN=null,BOUND=null;
+const GOLD="#D9B35A",RED="#FF3B30";
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eOut=t=>1-Math.pow(1-t,4);
+const eBack=t=>{const c=2.2;return 1+(--t)*t*((c+1)*t+c);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const D={1:{t:"hook"},2:{t:"big",s:74,hl:["primeiro."]},3:{t:"big",s:84,hl:["tempo"]},
+ 4:{t:"big",s:86,hl:["primeiro,","leva."]},5:{t:"card",txt:"REGISTRE ANTES"},
+ 6:{t:"big",s:92,hl:["exclusivo"]},7:{t:"big",s:118,hl:["BRASIL."]},8:{t:"num"},
+ 9:{t:"big",s:84,hl:["futuro."]},10:{t:"brand"},11:{t:"cta"}};
+
+function setTimeline(tl){TL=tl;SCN=tl.scenes;BOUND=[];const n=SCN.length;
+ for(let i=0;i<n;i++){const s=i===0?0:(SCN[i-1].end+SCN[i].start)/2;const e=i===n-1?tl.total:(SCN[i].end+SCN[i+1].start)/2;BOUND.push({start:s,end:e});}}
+
+const words=s=>s.replace(/\s+/g,' ').trim().split(' ');
+function big(d,lt,text){const ws=words(text);const rv=0.34,st=0.05;
+ let h='<div style="font-size:'+d.s+'px;max-width:900px;transform:scale('+lerp(1,1.03,eOut(clamp(lt/2)))+')">';
+ ws.forEach((w,i)=>{const p=clamp((lt-i*st)/rv),e=eOut(p);const b=w.replace(/[.,?]/g,'');
+  const c=(d.hl&&d.hl.some(z=>z.replace(/[.,?]/g,'')===b))?"w hl":"w";
+  h+='<span class="'+c+'" style="opacity:'+e+';transform:translateY('+((1-e)*46)+'px)">'+w+'</span> ';});
+ return h+'</div>';}
+
+function renderHook(lt){const c=document.getElementById("content");
+ const nome="SUA MARCA";const nc=Math.floor(clamp((lt-0.2)/1.1)*nome.length);
+ const cur=(Math.floor(lt*2)%2&&lt<1.5)?'<span style="color:'+GOLD+'">|</span>':'';
+ const sp=clamp((lt-1.5)/0.22);const rot=lerp(-16,-7,eOut(sp));
+ c.innerHTML='<div style="font-size:40px;font-weight:800;letter-spacing:6px;color:#9a9a9a;margin-bottom:34px;opacity:'+clamp(lt/0.3)+'">O NOME DA SUA EMPRESA</div>'+
+  '<div style="display:inline-flex;align-items:center;gap:18px;min-width:620px;justify-content:center;background:#141414;border:3px solid #2e2e2e;border-radius:22px;padding:34px 44px;font-size:62px;font-weight:900;color:#fff">'+nome.slice(0,nc)+cur+'</div>'+
+  '<div style="margin-top:50px;position:relative;height:150px">'+
+   '<span style="display:inline-block;border:8px solid '+RED+';color:'+RED+';font-weight:900;font-size:86px;padding:8px 34px;border-radius:16px;transform:rotate('+rot+'deg) scale('+lerp(2.6,1,eOut(sp))+');opacity:'+sp+'">TEM DONO?</span></div>';}
+
+function renderCard(d,lt){const c=document.getElementById("content");const p=eBack(clamp(lt/0.32));
+ c.innerHTML='<div style="width:860px;height:1040px;border-radius:50px;background:linear-gradient(145deg,#E8C06A,#C9872E);display:flex;align-items:center;justify-content:center;opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.08)+');box-shadow:0 40px 120px rgba(201,135,46,.45)"><div style="font-size:120px;font-weight:900;color:#1a1206;letter-spacing:-2px;line-height:1">'+d.txt+'</div></div>';}
+
+function renderNum(lt){const c=document.getElementById("content");const val=Math.round(lerp(0,10,eOut(clamp(lt/0.9))));const p=eBack(clamp(lt/0.4));
+ c.innerHTML='<div style="opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.12)+')"><span style="font-size:460px;font-weight:900;color:'+GOLD+';line-height:.85;text-shadow:0 0 70px rgba(217,179,90,.55)">'+val+'</span></div>'+
+  '<div style="font-size:90px;font-weight:900;color:#fff;letter-spacing:4px;opacity:'+clamp((lt-0.4)/0.4)+'">ANOS DE PROTEÇÃO</div>';}
+
+function renderBrand(lt){const c=document.getElementById("content");const p=eBack(clamp(lt/0.5));
+ c.innerHTML='<img src="logo.png" style="width:800px;opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.08)+')">';}
+function renderCta(lt){const c=document.getElementById("content");const p=eBack(clamp(lt/0.5));const pu=1+0.04*Math.sin(lt*7);
+ c.innerHTML='<div style="display:inline-flex;align-items:center;gap:22px;padding:40px 66px;border-radius:90px;background:'+GOLD+';color:#07070a;font-weight:900;font-size:50px;line-height:1.1;box-shadow:0 20px 70px rgba(217,179,90,.5);opacity:'+clamp(p)+';transform:scale('+(clamp(p,0,1.1)*pu)+')">Fale com um de nossos especialistas <span style="font-size:58px">→</span></div>';}
+
+window.seek=function(t){if(!TL)return;
+ let idx=BOUND.findIndex(b=>t>=b.start&&t<b.end);if(idx<0)idx=BOUND.length-1;
+ const b=BOUND[idx],s=SCN[idx],d=D[s.i],lt=t-b.start;
+ document.getElementById("bar").style.width=(1080*clamp(t/TL.total))+"px";
+ if(d.t==="hook")renderHook(lt);
+ else if(d.t==="big")document.getElementById("content").innerHTML=big(d,lt,s.text);
+ else if(d.t==="card")renderCard(d,lt);
+ else if(d.t==="num")renderNum(lt);
+ else if(d.t==="brand")renderBrand(lt);
+ else if(d.t==="cta")renderCta(lt);
+};
+window.__ready=true;
+</script></body></html>
