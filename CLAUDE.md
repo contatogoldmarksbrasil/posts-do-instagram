@@ -40,10 +40,15 @@ Ambiente:
 - O container é apagado ao fim da sessão: vídeos grandes, trabalhar numa pasta do computador do
   usuário (Remote Control no app desktop) em vez de passar pelo git.
 
+Skill de vídeo:
+- Skill `edicao-video-padrao` CRIADA em `.claude/skills/edicao-video-padrao/` com 5 estilos
+  (kinético, alerta, reel/ranking, cinema 3D, premium/cards), o fluxo completo e a logo.
+  Ao fazer vídeo, CARREGAR essa skill.
+
 Pendente:
-- Usuário vai mandar um vídeo real e o padrão de cada cliente (fonte, cores, estilo de legenda,
-  vinheta). Depois disso, criar a skill `edicao-video-padrao`.
-- Música e efeitos: usar arquivos que o usuário fornecer (não gerar trilha).
+- Voz: Piper ainda tem leve robotização. Usuário avaliando ElevenLabs (voz humana, via API).
+  Quando tiver a chave, gerar a narração por lá no lugar do Piper (resto do fluxo é igual).
+- Música/efeitos: trilha é sintetizada (trilha.py); se o usuário mandar trilha própria, usar a dele.
 
 ## Registro de conversas
 - **25/11/2026** — Usuário perguntou quais skills seriam necessárias para editar vídeo do zero
@@ -51,3 +56,7 @@ Pendente:
   existe no catálogo; o trabalho é feito com ffmpeg + faster-whisper + PySceneDetect (+ Remotion).
   Instalado e testado tudo; criado script de instalação do ambiente; usuário pediu que o Claude
   lembre das conversas → criado este arquivo.
+- **26/11/2026** — Criada a skill `edicao-video-padrao` com os 5 estilos de vídeo feitos nesta
+  semana (motores HTML + scripts narrar/render/trilha/montar + logo da Gold Marks). Usuário
+  perguntou preço de voz melhor: indicado ElevenLabs (Starter ~US$6/mês, API). Removido o símbolo
+  ® de uma logo (Café Agro Conilon) a pedido.

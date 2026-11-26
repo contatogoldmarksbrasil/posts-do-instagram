@@ -1,0 +1,138 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#07070a;font-family:'Montserrat',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.layer{position:absolute;inset:0}
+#grain{opacity:.06;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#vig{background:radial-gradient(130% 90% at 50% 44%,transparent 40%,rgba(0,0,0,.74) 100%)}
+#content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 70px;text-align:center}
+#logo{position:absolute;top:60px;left:50%;width:330px;transform:translateX(-50%);opacity:.5}
+#bar{position:absolute;left:0;bottom:0;height:9px;background:#D9B35A;box-shadow:0 0 20px #D9B35A}
+#flash{position:absolute;inset:0;background:#fff;pointer-events:none;opacity:0}
+.badge{display:inline-block;border:6px solid #D9B35A;color:#D9B35A;font-weight:900;font-size:46px;letter-spacing:3px;padding:10px 34px;border-radius:16px;background:rgba(217,179,90,.08)}
+.hl{color:#D9B35A}.red{color:#FF4D4D}
+</style></head>
+<body>
+<div id="stage">
+  <div class="layer" id="bg"></div>
+  <canvas class="layer" id="glow" width="1080" height="1920"></canvas>
+  <canvas class="layer" id="rays" width="1080" height="1920"></canvas>
+  <div class="layer" id="grain"></div>
+  <div class="layer" id="vig"></div>
+  <div class="layer" id="content"></div>
+  <img id="logo" src="logo.png">
+  <div class="layer" id="flash"></div>
+  <div id="bar"></div>
+</div>
+<script>
+let TL=null,SCN=null,BOUND=null;
+const GOLD="#D9B35A",RED="#FF4D4D";
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eOut=t=>1-Math.pow(1-t,4);
+const eBack=t=>{const c=2.0;return 1+(--t)*t*((c+1)*t+c);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const words=s=>s.replace(/\s+/g,' ').trim().split(' ');
+const D={1:{t:'hook'},2:{t:'num',n:'1'},3:{t:'erro',badge:'ERRO #1',motif:'cnpj'},
+ 4:{t:'num',n:'2'},5:{t:'erro',badge:'ERRO #2',motif:'first'},6:{t:'tease',n:'3'},
+ 7:{t:'erro',badge:'ERRO #3',motif:'search'},8:{t:'count'},9:{t:'hero'},10:{t:'brand'},11:{t:'cta'}};
+
+function setTimeline(tl){TL=tl;SCN=tl.scenes;BOUND=[];const n=SCN.length;
+ for(let i=0;i<n;i++){const s=i===0?0:(SCN[i-1].end+SCN[i].start)/2;const e=i===n-1?tl.total:(SCN[i].end+SCN[i+1].start)/2;BOUND.push({start:s,end:e});}}
+
+function bgAt(t){const g=document.getElementById("glow"),x=g.getContext("2d");x.clearRect(0,0,1080,1920);
+ const cx=540+Math.sin(t*0.5)*150,cy=740+Math.cos(t*0.4)*120;let gr=x.createRadialGradient(cx,cy,60,cx,cy,920);
+ gr.addColorStop(0,"rgba(217,179,90,0.28)");gr.addColorStop(.5,"rgba(217,179,90,0.06)");gr.addColorStop(1,"rgba(217,179,90,0)");
+ x.fillStyle=gr;x.fillRect(0,0,1080,1920);
+ x.fillStyle="rgba(217,179,90,0.5)";
+ for(let i=0;i<22;i++){const px=(i*91+t*20*(1+i%3))%1140-30;const py=(i*207+Math.sin(t*0.7+i)*50)%1980;
+  x.globalAlpha=0.18+0.22*Math.sin(t*1.3+i);x.beginPath();x.arc(px,py,1+(i%3),0,7);x.fill();}
+ x.globalAlpha=1;document.getElementById("bg").style.background="radial-gradient(120% 80% at 50% 30%,#161019 0%,#0a0a0e 55%,#050507 100%)";}
+
+function drawRays(t,inten,col){const c=document.getElementById("rays"),x=c.getContext("2d");x.clearRect(0,0,1080,1920);
+ if(inten<=0.01)return;const cx=540,cy=760,R=1500,n=30;x.save();x.translate(cx,cy);x.rotate(t*0.12);
+ for(let i=0;i<n;i++){const a=(i/n)*6.283,w=0.05;x.beginPath();x.moveTo(0,0);
+  x.lineTo(Math.cos(a-w)*R,Math.sin(a-w)*R);x.lineTo(Math.cos(a+w)*R,Math.sin(a+w)*R);x.closePath();
+  x.fillStyle=col;x.globalAlpha=(i%2?0.04:0.09)*inten;x.fill();}
+ x.restore();x.globalAlpha=1;}
+
+function karaoke(text,s,t,size,intro){const ws=words(text);
+ const prog=clamp((t-s.start)/Math.max(0.1,(s.end-s.start)));const cur=Math.floor(prog*ws.length);
+ let h='<div style="font-size:'+size+'px;font-weight:900;line-height:1.22;max-width:940px;opacity:'+clamp(intro/0.2)+'">';
+ ws.forEach((w,i)=>{let b=w.replace(/[.,]/g,'');
+  if(i<cur)h+='<span style="color:#fff">'+w+'</span> ';
+  else if(i===cur)h+='<span style="color:#07070a;background:'+GOLD+';border-radius:12px;padding:0 14px;display:inline-block;transform:scale(1.05)">'+w+'</span> ';
+  else h+='<span style="color:#63636b">'+w+'</span> ';});
+ return h+'</div>';}
+
+function renderHook(lt){const c=document.getElementById("content");
+ const bp=eBack(clamp(lt/0.4));const sub=eOut(clamp((lt-0.3)/0.5));
+ const kp=eBack(clamp((lt-2.6)/0.5));const kpulse=1+0.05*Math.sin(lt*7);
+ c.innerHTML='<div style="font-size:300px;font-weight:900;color:'+GOLD+';line-height:.85;opacity:'+clamp(bp)+';transform:scale('+clamp(bp,0,1.12)+');text-shadow:0 0 50px rgba(217,179,90,.5)">3</div>'+
+  '<div style="font-size:150px;font-weight:900;color:#fff;letter-spacing:4px;opacity:'+clamp((lt-0.2)/0.4)+'">ERROS</div>'+
+  '<div style="margin-top:22px;font-size:54px;font-weight:800;color:#cfcfd4;max-width:880px;opacity:'+sub+'">que <span class="hl">MAIS</span> fazem você perder a sua marca</div>'+
+  '<div style="margin-top:44px;opacity:'+clamp(kp)+';transform:translateY('+((1-clamp(kp))*30)+'px) scale('+(clamp(kp,0,1.1)*kpulse)+')"><span style="display:inline-block;background:'+RED+';color:#fff;font-weight:900;font-size:46px;padding:16px 38px;border-radius:50px">👀 e o 3º é o MAIS COMUM</span></div>';}
+
+function renderTease(lt,s,t){const c=document.getElementById("content");
+ const bp=eBack(clamp(lt/0.3));const tag=eBack(clamp((lt-0.5)/0.4));const tpulse=1+0.06*Math.sin(lt*8);
+ c.innerHTML='<div style="font-size:70px;font-weight:900;color:#fff;letter-spacing:10px;opacity:'+clamp(lt/0.2)+'">ERRO</div>'+
+  '<div style="font-size:360px;font-weight:900;color:'+GOLD+';line-height:.9;opacity:'+clamp(bp)+';transform:scale('+clamp(bp,0,1.12)+');text-shadow:0 0 60px rgba(217,179,90,.6)">#3</div>'+
+  '<div style="margin:6px 0 34px;opacity:'+clamp(tag)+';transform:scale('+(clamp(tag,0,1.1)*tpulse)+')"><span style="background:'+RED+';color:#fff;font-weight:900;font-size:54px;padding:16px 42px;border-radius:50px;letter-spacing:2px">🔥 O MAIS COMUM</span></div>'+
+  karaoke(s.text,s,t,46,lt-0.2);}
+
+function renderNum(d,lt){const c=document.getElementById("content");
+ const bp=eBack(clamp(lt/0.28));const[sx,sy]=[Math.sin(lt*60)*14*Math.max(0,1-lt/0.4),0];
+ c.innerHTML='<div style="transform:translate('+sx+'px,0)"><div style="font-size:70px;font-weight:900;color:#fff;letter-spacing:10px;opacity:'+clamp((lt)/0.2)+'">ERRO</div>'+
+  '<div style="font-size:440px;font-weight:900;color:'+GOLD+';line-height:.9;opacity:'+clamp(bp)+';transform:scale('+clamp(bp,0,1.15)+');text-shadow:0 0 60px rgba(217,179,90,.6)">#'+d.n+'</div></div>';}
+
+function motifHTML(m,lt){const p=eBack(clamp((lt-0.15)/0.45));const op=clamp(p);
+ if(m==='cnpj')return '<div style="opacity:'+op+';transform:scale('+clamp(p,0,1.1)+');display:inline-flex;align-items:center;gap:24px;background:#f3f1ea;color:#111;font-weight:900;font-size:40px;padding:26px 40px;border-radius:18px"><span>CNPJ</span><span style="color:#777">12.345.678/0001-90</span><span style="color:'+RED+';font-size:60px">✗</span></div>';
+ if(m==='first')return '<div style="opacity:'+op+';transform:scale('+clamp(p,0,1.15)+');width:220px;height:220px;border-radius:50%;background:'+GOLD+';color:#07070a;font-weight:900;font-size:130px;display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 0 50px rgba(217,179,90,.5)">1º</div>';
+ if(m==='search')return '<div style="opacity:'+op+';transform:scale('+clamp(p,0,1.08)+');display:inline-flex;align-items:center;gap:20px;background:#15151c;border:4px solid #35353f;border-radius:70px;padding:22px 40px;font-size:44px;color:#fff;font-weight:700">🔍 <span style="color:#9a9aa2">sua marca</span><span style="background:'+RED+';color:#fff;font-weight:900;font-size:32px;padding:8px 20px;border-radius:40px">JÁ EXISTE</span></div>';
+ return '';}
+
+function renderErro(d,lt,s,t){const c=document.getElementById("content");
+ const bp=eBack(clamp(lt/0.35));
+ c.innerHTML='<div class="badge" style="opacity:'+clamp(bp)+';transform:translateY('+((1-clamp(bp))*-30)+'px)">'+d.badge+'</div>'+
+  '<div style="margin:54px 0 46px">'+motifHTML(d.motif,lt)+'</div>'+
+  karaoke(s.text,s,t,62,lt-0.1);}
+
+function renderCount(lt,s,t){const c=document.getElementById("content");
+ const val=Math.round(lerp(0,10,eOut(clamp(lt/1.0))));const bp=eBack(clamp(lt/0.5));
+ c.innerHTML='<div style="opacity:'+clamp(bp)+';transform:scale('+clamp(bp,0,1.1)+')"><span style="font-size:360px;font-weight:900;color:'+GOLD+';line-height:.9;text-shadow:0 0 60px rgba(217,179,90,.6)">'+val+'</span><span style="font-size:110px;font-weight:900;color:#fff">ANOS</span></div>'+
+  '<div style="font-size:50px;font-weight:800;color:#fff;letter-spacing:3px;margin:8px 0 40px;opacity:'+clamp((lt-0.5)/0.4)+'">EM TODO O BRASIL 🇧🇷</div>'+
+  karaoke(s.text,s,t,52,lt-0.3);}
+
+function renderHero(lt,s,t){const c=document.getElementById("content");
+ c.innerHTML=karaoke(s.text,s,t,78,lt);}
+
+function renderBrand(lt){const c=document.getElementById("content");const p=eBack(clamp(lt/0.55));const tp=eOut(clamp((lt-0.6)/0.5));
+ c.innerHTML='<img src="logo.png" style="width:820px;opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.08)+')"><div style="margin-top:28px;font-size:58px;font-weight:700;color:#cfcfd4;opacity:'+tp+'">Registre a sua marca.</div>';}
+
+function renderCta(lt){const c=document.getElementById("content");const p=eBack(clamp(lt/0.5));const pulse=1+0.04*Math.sin(lt*7);
+ c.innerHTML='<div style="display:inline-flex;align-items:center;gap:22px;padding:40px 64px;border-radius:90px;background:'+GOLD+';color:#07070a;font-weight:900;font-size:50px;line-height:1.1;box-shadow:0 20px 70px rgba(217,179,90,.45);opacity:'+clamp(p)+';transform:scale('+(clamp(p,0,1.1)*pulse)+')">Fale com um de nossos especialistas <span style="font-size:58px">→</span></div>';}
+
+window.seek=function(t){if(!TL)return;bgAt(t);
+ let idx=BOUND.findIndex(b=>t>=b.start&&t<b.end);if(idx<0)idx=BOUND.length-1;
+ const b=BOUND[idx],s=SCN[idx],d=D[s.i],lt=t-b.start;
+ const burst=clamp(1-lt/0.5);
+ let inten=0,col="rgba(217,179,90,1)";
+ if(d.t==='hook'||d.t==='count')inten=0.9+0.5*burst;
+ else if(d.t==='num'){inten=1.0+0.6*burst;col="rgba(255,77,77,1)";}
+ else if(d.t==='tease'){inten=1.0+0.6*burst;col="rgba(255,77,77,1)";}
+ else if(d.t==='erro')inten=0.3;
+ drawRays(t,inten,col);
+ document.getElementById("bar").style.width=(1080*clamp(t/TL.total))+"px";
+ document.getElementById("flash").style.opacity=clamp(1-lt/0.12)*0.5;
+ if(d.t==='hook')renderHook(lt);
+ else if(d.t==='tease')renderTease(lt,s,t);
+ else if(d.t==='num')renderNum(d,lt);
+ else if(d.t==='erro')renderErro(d,lt,s,t);
+ else if(d.t==='count')renderCount(lt,s,t);
+ else if(d.t==='hero')renderHero(lt,s,t);
+ else if(d.t==='brand')renderBrand(lt);
+ else if(d.t==='cta')renderCta(lt);
+};
+window.__ready=true;
+</script></body></html>

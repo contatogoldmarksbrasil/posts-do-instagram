@@ -1,0 +1,162 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;0,900;1,900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#07070a;font-family:'Montserrat',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.layer{position:absolute;inset:0}
+#glow{filter:blur(0)}
+#grain{opacity:.07;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#content{position:absolute;left:0;right:0;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 90px;text-align:center}
+.word{display:inline-block;color:#fff;font-weight:900;line-height:1.02;letter-spacing:-1px;will-change:transform,opacity}
+.hl{color:#D9B35A}
+.red{color:#FF4D4D}
+#flash{position:absolute;inset:0;background:#fff;pointer-events:none}
+#bar{position:absolute;left:0;bottom:0;height:8px;background:#D9B35A;box-shadow:0 0 18px #D9B35A}
+#tag{position:absolute;top:70px;left:50%;transform:translateX(-50%);font-weight:800;font-size:26px;letter-spacing:6px;color:#D9B35A;opacity:.85}
+.accent{position:absolute;font-weight:900}
+#vig{position:absolute;inset:0;background:radial-gradient(130% 90% at 50% 42%,transparent 40%,rgba(0,0,0,.72) 100%)}
+.chip{display:inline-block;margin:18px 0;padding:26px 54px;border-radius:70px;font-weight:900;font-size:76px;letter-spacing:-1px}
+.pill{display:inline-flex;align-items:center;gap:26px;padding:40px 70px;border-radius:90px;background:#D9B35A;color:#07070a;font-weight:900;font-size:66px;letter-spacing:-1px;box-shadow:0 20px 70px rgba(217,179,90,.45)}
+#brandR{color:#D9B35A}
+</style></head>
+<body>
+<div id="stage">
+  <div class="layer" id="bg"></div>
+  <canvas class="layer" id="glow" width="1080" height="1920"></canvas>
+  <div class="layer" id="grain"></div>
+  <div class="layer" id="vig"></div>
+  <div id="content"></div>
+  <div id="tag">REGISTRO DE MARCAS</div>
+  <div class="layer" id="flash" style="opacity:0"></div>
+  <div id="bar"></div>
+</div>
+<script>
+let TL=null, SCN=null, BOUND=null;
+const GOLD="#D9B35A", RED="#FF4D4D";
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const easeOut=t=>1-Math.pow(1-t,4);
+const easeBack=t=>{const c=1.7;return 1+ (--t)*t*((c+1)*t+c);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+// design por cena (texto vem do timeline; aqui vai o estilo)
+const DESIGN={
+ 1:{type:"kin",size:118,hl:["marca","zero."]},
+ 2:{type:"kin",size:120,red:["não","é","sua."]},
+ 3:{type:"kin",size:96,red:["registrar","tirar"]},
+ 4:{type:"kin",size:112,hl:["primeiro,","leva."],stamp:"1º"},
+ 5:{type:"kin",size:94,hl:["protege","dez","anos."],big:"10"},
+ 6:{type:"chips",chips:[["USO EXCLUSIVO",GOLD],["PROIBIDO COPIAR",RED],["+ VALOR PRA SUA MARCA",GOLD]]},
+ 7:{type:"kin",size:104,red:["sorte."]},
+ 8:{type:"brand"},
+ 9:{type:"cta"}
+};
+
+function setTimeline(tl){
+  TL=tl; SCN=tl.scenes;
+  BOUND=[]; const n=SCN.length;
+  for(let i=0;i<n;i++){
+    const start = i===0 ? 0 : (SCN[i-1].end+SCN[i].start)/2;
+    const end = i===n-1 ? tl.total : (SCN[i].end+SCN[i+1].start)/2;
+    BOUND.push({start,end});
+  }
+}
+
+function bgAt(t){
+  const g=document.getElementById("glow"), x=g.getContext("2d");
+  x.clearRect(0,0,1080,1920);
+  // brilho dourado que deriva
+  const cx=540+Math.sin(t*0.5)*140, cy=760+Math.cos(t*0.4)*120;
+  let grd=x.createRadialGradient(cx,cy,60,cx,cy,900);
+  grd.addColorStop(0,"rgba(217,179,90,0.33)");grd.addColorStop(.5,"rgba(217,179,90,0.07)");grd.addColorStop(1,"rgba(217,179,90,0)");
+  x.fillStyle=grd;x.fillRect(0,0,1080,1920);
+  // partículas
+  x.fillStyle="rgba(217,179,90,0.5)";
+  for(let i=0;i<22;i++){
+    const px=(i*97+ (t*18*(1+i%3))) % 1140 -30;
+    const py=(i*213 + Math.sin(t*0.7+i)*40) % 1980;
+    const r=1+ (i%3);
+    x.globalAlpha=0.25+0.25*Math.sin(t*1.3+i);
+    x.beginPath();x.arc(px,py,r,0,7);x.fill();
+  }
+  x.globalAlpha=1;
+  document.getElementById("bg").style.background=
+    "radial-gradient(120% 80% at 50% 30%, #141018 0%, #0a0a0e 55%, #050507 100%)";
+}
+
+function words(text){return text.replace(/\s+/g,' ').trim().split(' ');}
+
+function renderKin(d, lt, text){
+  const c=document.getElementById("content");
+  const ws=words(text);
+  const reveal=0.5, stag=0.06;
+  let html='<div style="transform:scale('+lerp(1,1.04,easeOut(clamp(lt/2.2)))+')">';
+  if(d.big){
+    const bp=easeBack(clamp((lt-0.05)/0.55));
+    html+='<div style="font-size:300px;font-weight:900;color:'+GOLD+';line-height:.9;opacity:'+clamp(bp)+';transform:scale('+clamp(bp,0,1.15)+')">'+d.big+'<span style="font-size:90px">ANOS</span></div>';
+  }
+  if(d.stamp){
+    const sp=clamp((lt-0.1)/0.3); const rot=lerp(-18,-8,easeOut(sp));
+    html+='<div style="display:inline-block;border:10px solid '+RED+';color:'+RED+';font-size:150px;font-weight:900;padding:6px 34px;border-radius:22px;transform:rotate('+rot+'deg) scale('+lerp(2.2,1,easeOut(sp))+');opacity:'+sp+';margin-bottom:30px">'+d.stamp+'</div><br>';
+  }
+  html+='<div style="font-size:'+d.size+'px">';
+  ws.forEach((w,i)=>{
+    const p=clamp((lt-i*stag)/reveal); const e=easeOut(p);
+    let cls="word"; const bare=w.replace(/[.,]/g,'');
+    if(d.hl&&d.hl.some(h=>h.replace(/[.,]/g,'')===bare)) cls+=" hl";
+    if(d.red&&d.red.some(h=>h.replace(/[.,]/g,'')===bare)) cls+=" red";
+    const pulse=1+0.05*Math.max(0,Math.sin((lt-0.3)*6))*( (cls.includes('hl')||cls.includes('red'))?1:0 );
+    html+='<span class="'+cls+'" style="opacity:'+e+';transform:translateY('+((1-e)*70)+'px) scale('+lerp(.9,pulse,e)+')">'+w+'</span> ';
+  });
+  html+='</div></div>';
+  c.innerHTML=html;
+}
+
+function renderChips(d,lt){
+  const c=document.getElementById("content");
+  let html='<div>';
+  d.chips.forEach((ch,i)=>{
+    const p=easeBack(clamp((lt-0.15-i*0.55)/0.5));
+    const dark=ch[1]===RED;
+    html+='<div class="chip" style="background:'+ch[1]+';color:'+(dark?'#fff':'#07070a')+';opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.1)+') translateY('+((1-clamp(p))*40)+'px)">'+ch[0]+'</div><br>';
+  });
+  html+='</div>';c.innerHTML=html;
+}
+
+function renderBrand(lt){
+  const c=document.getElementById("content");
+  const p1=easeOut(clamp(lt/0.5)), p2=easeOut(clamp((lt-0.4)/0.5)), p3=easeOut(clamp((lt-0.9)/0.5));
+  const rp=easeBack(clamp((lt-1.0)/0.5));
+  c.innerHTML=
+   '<div style="opacity:'+p1+';transform:translateY('+((1-p1)*50)+'px)">'+
+     '<div style="font-size:150px;font-weight:900;color:'+GOLD+';letter-spacing:-3px;line-height:.95">GOLD MARKS'+
+       '<span id="brandR" style="font-size:70px;vertical-align:super;opacity:'+clamp(rp)+';display:inline-block;transform:scale('+clamp(rp,0,1.2)+')">®</span></div>'+
+     '<div style="font-size:84px;font-weight:800;letter-spacing:28px;color:#fff;opacity:'+p2+'">BRASIL</div>'+
+   '</div>'+
+   '<div style="margin-top:46px;font-size:64px;font-weight:700;color:#cfcfd4;opacity:'+p3+';transform:translateY('+((1-p3)*30)+'px)">Registre a sua marca.</div>';
+}
+
+function renderCta(lt){
+  const c=document.getElementById("content");
+  const p=easeBack(clamp(lt/0.5));
+  const pulse=1+0.04*Math.sin(lt*7);
+  c.innerHTML='<div class="pill" style="opacity:'+clamp(p)+';transform:scale('+(clamp(p,0,1.1)*pulse)+')">Fale com um de nossos especialistas <span style="font-size:72px">→</span></div>';
+}
+
+window.seek=function(t){
+  if(!TL) return;
+  bgAt(t);
+  document.getElementById("bar").style.width=(1080*clamp(t/TL.total))+"px";
+  // cena ativa
+  let idx=BOUND.findIndex(b=>t>=b.start && t<b.end); if(idx<0) idx=BOUND.length-1;
+  const b=BOUND[idx], sc=SCN[idx], d=DESIGN[sc.i];
+  const lt=t-b.start;
+  // flash na entrada
+  document.getElementById("flash").style.opacity = clamp(1-lt/0.12)*0.5;
+  if(d.type==="kin") renderKin(d,lt,sc.text);
+  else if(d.type==="chips") renderChips(d,lt);
+  else if(d.type==="brand") renderBrand(lt);
+  else if(d.type==="cta") renderCta(lt);
+};
+window.__ready=true;
+</script></body></html>

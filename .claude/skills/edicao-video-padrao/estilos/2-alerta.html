@@ -1,0 +1,178 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#07070a;font-family:'Montserrat',sans-serif}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.layer{position:absolute;inset:0}
+#scan{background:repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 2px,transparent 2px 5px);opacity:.5}
+#grain{opacity:.06;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#vig{background:radial-gradient(130% 90% at 50% 42%,transparent 38%,rgba(0,0,0,.72) 100%)}
+#redflash{background:radial-gradient(circle at 50% 45%,rgba(255,60,60,.5),transparent 60%);opacity:0}
+#content{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 80px;text-align:center}
+.word{display:inline-block;color:#fff;font-weight:900;line-height:1.03;letter-spacing:-1px}
+.hl{color:#D9B35A}.red{color:#FF4D4D}
+#logo{position:absolute;top:64px;left:50%;width:360px;transform:translateX(-50%);opacity:.55}
+#bar{position:absolute;left:0;bottom:0;height:9px;background:#D9B35A;box-shadow:0 0 20px #D9B35A}
+#flash{position:absolute;inset:0;background:#fff;pointer-events:none;opacity:0}
+.boleto{position:absolute;width:240px;height:150px;background:#f3f1ea;border-radius:10px;padding:14px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.bl-top{display:flex;justify-content:space-between;align-items:center}
+.bl-inpi{color:#c0392b;font-weight:900;font-size:22px}.bl-x{color:#888;font-size:13px;font-weight:700}
+.bar{height:34px;margin-top:10px;background:repeating-linear-gradient(90deg,#111 0 3px,transparent 3px 7px,#111 7px 9px,transparent 9px 14px)}
+.bl-val{margin-top:8px;color:#111;font-weight:900;font-size:26px}
+</style></head>
+<body>
+<div id="stage">
+  <div class="layer" id="bg"></div>
+  <canvas class="layer" id="glow" width="1080" height="1920"></canvas>
+  <div class="layer" id="scan"></div>
+  <div class="layer" id="redflash"></div>
+  <div class="layer" id="grain"></div>
+  <div class="layer" id="vig"></div>
+  <div class="layer" id="content"></div>
+  <img id="logo" src="logo.png">
+  <div class="layer" id="flash"></div>
+  <div id="bar"></div>
+</div>
+<script>
+let TL=null,SCN=null,BOUND=null;
+const GOLD="#D9B35A",RED="#FF4D4D";
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eOut=t=>1-Math.pow(1-t,4);
+const eBack=t=>{const c=1.9;return 1+(--t)*t*((c+1)*t+c);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+const shake=(lt,amp,dur)=>{const k=Math.max(0,1-lt/dur);return[Math.sin(lt*70)*amp*k,Math.cos(lt*61)*amp*k];};
+
+const D={
+ 1:{t:"alert",size:104,red:["Pare","agora."]},
+ 2:{t:"rain",size:86,red:["falsas."],hl:[]},
+ 3:{t:"phone",size:70},
+ 4:{t:"stamp",size:92,red:["desespero."]},
+ 5:{t:"seal",size:76,hl:["GRU,","oficial."]},
+ 6:{t:"glitch",size:92,red:["não","pediu."]},
+ 7:{t:"stop"},
+ 8:{t:"check",size:0},
+ 9:{t:"shield",size:80,hl:["marca."]},
+ 10:{t:"brand"},
+ 11:{t:"cta"}
+};
+
+function setTimeline(tl){TL=tl;SCN=tl.scenes;BOUND=[];const n=SCN.length;
+ for(let i=0;i<n;i++){const s=i===0?0:(SCN[i-1].end+SCN[i].start)/2;const e=i===n-1?tl.total:(SCN[i].end+SCN[i+1].start)/2;BOUND.push({start:s,end:e});}}
+
+function bgAt(t){const g=document.getElementById("glow"),x=g.getContext("2d");x.clearRect(0,0,1080,1920);
+ const cx=540+Math.sin(t*0.5)*150,cy=720+Math.cos(t*0.4)*120;
+ let gr=x.createRadialGradient(cx,cy,60,cx,cy,920);
+ gr.addColorStop(0,"rgba(217,179,90,0.30)");gr.addColorStop(.5,"rgba(217,179,90,0.06)");gr.addColorStop(1,"rgba(217,179,90,0)");
+ x.fillStyle=gr;x.fillRect(0,0,1080,1920);
+ x.fillStyle="rgba(217,179,90,0.5)";
+ for(let i=0;i<26;i++){const px=(i*91+t*22*(1+i%3))%1140-30;const py=(i*207+Math.sin(t*0.7+i)*50)%1980;
+  x.globalAlpha=0.2+0.25*Math.sin(t*1.4+i);x.beginPath();x.arc(px,py,1+(i%3),0,7);x.fill();}
+ x.globalAlpha=1;
+ document.getElementById("bg").style.background="radial-gradient(120% 80% at 50% 28%,#161019 0%,#0a0a0e 55%,#050507 100%)";}
+
+const words=s=>s.replace(/\s+/g,' ').trim().split(' ');
+function headline(d,lt,text,extraTop=''){
+ const ws=words(text),reveal=0.42,stag=0.05;
+ let h='<div style="font-size:'+d.size+'px">';
+ ws.forEach((w,i)=>{const p=clamp((lt-i*stag)/reveal),e=eOut(p);let c="word";const b=w.replace(/[.,?]/g,'');
+  if(d.hl&&d.hl.some(z=>z.replace(/[.,?]/g,'')===b))c+=" hl";
+  if(d.red&&d.red.some(z=>z.replace(/[.,?]/g,'')===b))c+=" red";
+  h+='<span class="'+c+'" style="opacity:'+e+';transform:translateY('+((1-e)*60)+'px) scale('+lerp(.9,1,e)+')">'+w+'</span> ';});
+ return extraTop+h+'</div>';
+}
+function boletoHTML(val){return '<div class="bl-top"><span class="bl-inpi">INPI</span><span class="bl-x">cobrança</span></div><div class="bar"></div><div class="bl-val">R$ '+val+'</div>';}
+
+function renderAlert(d,lt,text){const c=document.getElementById("content");
+ const wp=eBack(clamp(lt/0.4)),pulse=1+0.06*Math.sin(lt*9);
+ c.innerHTML='<div style="font-size:230px;line-height:1;opacity:'+clamp(wp)+';transform:scale('+(clamp(wp,0,1.2)*pulse)+');filter:drop-shadow(0 0 30px rgba(255,77,77,.7))">⚠️</div><div style="margin-top:30px">'+headline(d,lt-0.15,text)+'</div>';}
+
+function renderRain(d,lt,text){const c=document.getElementById("content");
+ let b='<div style="position:absolute;inset:0">';
+ const vals=["890,00","1.240,00","650,00","2.100,00","430,00","1.780,00","990,00"];
+ for(let i=0;i<7;i++){const st=i*0.12;const p=clamp((lt-st)/1.6);const y=lerp(-200,2050,p);const x=70+((i*149)%860);const rot=(i%2?1:-1)*(6+i);
+  b+='<div class="boleto" style="left:'+x+'px;top:'+y+'px;opacity:'+(0.85*clamp(lt*3))+';transform:rotate('+rot+'deg) scale(.82)">'+boletoHTML(vals[i])+'</div>';}
+ b+='</div>';
+ c.innerHTML=b+'<div style="position:relative;z-index:2;background:rgba(7,7,10,.35);border-radius:20px;padding:10px 0">'+headline(d,lt,text)+'</div>';}
+
+function renderPhone(d,lt,text){const c=document.getElementById("content");
+ const up=eBack(clamp(lt/0.45));const blink=Math.sin(lt*10)>0;
+ const mag=clamp((lt-0.6)/0.5);const mx=lerp(120,330,eOut(mag)),my=lerp(260,250,eOut(mag));
+ c.innerHTML=
+ '<div style="position:relative;width:560px;height:900px;background:#101016;border:12px solid #23232c;border-radius:56px;opacity:'+clamp(up)+';transform:translateY('+((1-clamp(up))*60)+'px) scale('+clamp(up,0,1.05)+');box-shadow:0 30px 90px rgba(0,0,0,.6);overflow:hidden">'+
+   '<div style="background:#1b1b22;padding:30px 28px;text-align:left"><div style="color:#FF4D4D;font-weight:800;font-size:26px">✉ inpi-cobranca@br-inpi-oficial.com</div>'+
+   '<div style="color:#fff;font-weight:900;font-size:40px;margin-top:10px">Pagamento pendente</div></div>'+
+   '<div style="padding:28px;text-align:left;color:#cfcfd4;font-size:30px;line-height:1.5">Seu registro será <b style="color:#FF4D4D">CANCELADO</b>. Pague o boleto em anexo.</div>'+
+   '<div style="margin:10px 28px;background:'+(blink?'#FF4D4D':'#7a1f1f')+';color:#fff;font-weight:900;font-size:40px;text-align:center;padding:22px;border-radius:14px">PAGUE EM 24H ⏳</div>'+
+   '<div class="boleto" style="position:static;margin:24px 28px;width:auto;transform:scale(1)">'+boletoHTML("1.890,00")+'</div>'+
+   '<div style="position:absolute;left:'+mx+'px;top:'+my+'px;width:150px;height:150px;border:10px solid '+GOLD+';border-radius:50%;box-shadow:0 0 0 2000px rgba(0,0,0,0.0);opacity:'+clamp(mag)+';transform:scale('+lerp(1.4,1,eOut(mag))+')"></div>'+
+ '</div>';}
+
+function renderStamp(d,lt,text){const c=document.getElementById("content");
+ const sp=clamp((lt-0.5)/0.22);const rot=lerp(-24,-11,eOut(sp));
+ c.innerHTML=headline(d,lt,text)+
+ '<div style="position:relative;margin-top:50px"><div class="boleto" style="position:static;transform:scale(1.15)">'+boletoHTML("2.450,00")+'</div>'+
+ '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><div style="border:9px solid '+RED+';color:'+RED+';font-weight:900;font-size:72px;padding:4px 26px;border-radius:14px;transform:rotate('+rot+'deg) scale('+lerp(2.4,1,eOut(sp))+');opacity:'+sp+'">FALSO</div></div></div>';}
+
+function renderSeal(d,lt,text){const c=document.getElementById("content");
+ const p=eBack(clamp(lt/0.5));
+ c.innerHTML='<div style="width:360px;height:360px;border-radius:50%;border:10px solid '+GOLD+';display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.1)+');box-shadow:0 0 50px rgba(217,179,90,.4)"><div style="color:'+GOLD+';font-weight:900;font-size:120px;line-height:1">GRU</div><div style="color:#fff;font-weight:800;font-size:34px;letter-spacing:2px">gov.br/inpi</div><div style="color:#9a9aa2;font-weight:700;font-size:24px;margin-top:6px">site oficial ✓</div></div><div style="margin-top:40px">'+headline(d,lt-0.2,text)+'</div>';}
+
+function renderGlitch(d,lt,text){const c=document.getElementById("content");
+ const tear=clamp((lt-0.9)/0.5);const gx=(tear>0?0:1)*6*Math.sin(lt*40);
+ c.innerHTML='<div style="position:relative;margin-bottom:46px;transform:translateX('+lerp(0,700,eOut(tear))+'px) skewX('+lerp(0,25,tear)+'deg) rotate('+lerp(0,18,tear)+'deg);opacity:'+(1-tear)+'">'+
+  '<div class="boleto" style="position:static;transform:scale(1.15)">'+boletoHTML("1.120,00")+'</div>'+
+  '<div style="position:absolute;inset:0;mix-blend-mode:screen;transform:translate('+gx+'px,0);background:rgba(255,0,0,.25)"></div>'+
+  '<div style="position:absolute;inset:0;mix-blend-mode:screen;transform:translate('+(-gx)+'px,0);background:rgba(0,255,255,.25)"></div></div>'+
+  headline(d,lt,text);}
+
+function renderStop(lt){const c=document.getElementById("content");
+ const p=eBack(clamp(lt/0.3));const[sx,sy]=shake(lt,16,0.5);
+ c.innerHTML='<div style="transform:translate('+sx+'px,'+sy+'px)"><div style="width:620px;height:620px;background:'+RED+';clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%);display:flex;align-items:center;justify-content:center;opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.1)+');box-shadow:0 0 70px rgba(255,77,77,.6)"><div style="color:#fff;font-weight:900;font-size:160px;letter-spacing:4px">PARE</div></div></div>';}
+
+function renderCheck(lt){const c=document.getElementById("content");
+ const kp=eOut(clamp(lt/0.4));const items=["O processo","O valor","A fonte"];
+ let h='<div style="font-weight:900;font-size:60px;letter-spacing:6px;color:'+GOLD+';opacity:'+kp+';margin-bottom:40px">CONFIRA</div>';
+ items.forEach((it,i)=>{const p=clamp((lt-0.4-i*0.6)/0.4);const tick=clamp((lt-0.55-i*0.6)/0.25);
+  h+='<div style="display:flex;align-items:center;gap:28px;margin:18px 0;opacity:'+clamp(p)+';transform:translateX('+((1-clamp(p))*-60)+'px)">'+
+   '<div style="width:84px;height:84px;border-radius:18px;border:7px solid '+GOLD+';background:'+(tick>.5?GOLD:'transparent')+';display:flex;align-items:center;justify-content:center;color:#07070a;font-size:58px;font-weight:900">'+(tick>.5?'✓':'')+'</div>'+
+   '<div style="font-size:72px;font-weight:800;color:#fff">'+it+'</div></div>';});
+ c.innerHTML='<div>'+h+'</div>';}
+
+function renderShield(d,lt,text){const c=document.getElementById("content");
+ const draw=clamp(lt/0.8);const tick=clamp((lt-0.7)/0.4);
+ c.innerHTML='<svg width="320" height="360" viewBox="0 0 100 112" style="filter:drop-shadow(0 0 30px rgba(217,179,90,.5))">'+
+  '<path d="M50 4 L92 20 V56 C92 84 72 100 50 108 C28 100 8 84 8 56 V20 Z" fill="rgba(217,179,90,0.10)" stroke="'+GOLD+'" stroke-width="4" stroke-dasharray="340" stroke-dashoffset="'+(340*(1-draw))+'"/>'+
+  '<path d="M34 56 L46 70 L70 40" fill="none" stroke="'+GOLD+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="70" stroke-dashoffset="'+(70*(1-tick))+'"/></svg>'+
+  '<div style="margin-top:34px">'+headline(d,lt-0.2,text)+'</div>';}
+
+function renderBrand(lt){const c=document.getElementById("content");
+ const p=eBack(clamp(lt/0.55));const tp=eOut(clamp((lt-0.6)/0.5));
+ c.innerHTML='<img src="logo.png" style="width:820px;opacity:'+clamp(p)+';transform:scale('+clamp(p,0,1.08)+')">'+
+  '<div style="margin-top:30px;font-size:58px;font-weight:700;color:#cfcfd4;opacity:'+tp+';transform:translateY('+((1-tp)*30)+'px)">A gente protege o seu registro.</div>';}
+
+function renderCta(lt){const c=document.getElementById("content");const p=eBack(clamp(lt/0.5));const pulse=1+0.04*Math.sin(lt*7);
+ c.innerHTML='<div style="display:inline-flex;align-items:center;gap:24px;padding:40px 68px;border-radius:90px;background:'+GOLD+';color:#07070a;font-weight:900;font-size:50px;line-height:1.1;box-shadow:0 20px 70px rgba(217,179,90,.45);opacity:'+clamp(p)+';transform:scale('+(clamp(p,0,1.1)*pulse)+')">Fale com um de nossos especialistas <span style="font-size:58px">→</span></div>';}
+
+window.seek=function(t){if(!TL)return;bgAt(t);
+ document.getElementById("bar").style.width=(1080*clamp(t/TL.total))+"px";
+ let idx=BOUND.findIndex(b=>t>=b.start&&t<b.end);if(idx<0)idx=BOUND.length-1;
+ const b=BOUND[idx],sc=SCN[idx],d=D[sc.i],lt=t-b.start;
+ document.getElementById("flash").style.opacity=clamp(1-lt/0.12)*0.55;
+ const rf=(d.t==="alert"||d.t==="stop")?clamp(1-lt/0.5)*0.6:(d.t==="glitch"?0.15+0.1*Math.sin(lt*30):0);
+ document.getElementById("redflash").style.opacity=rf;
+ const C=document.getElementById("content");C.style.transform="none";
+ if(d.t==="alert"){const[x,y]=shake(lt,10,0.45);C.style.transform="translate("+x+"px,"+y+"px)";renderAlert(d,lt,sc.text);}
+ else if(d.t==="rain")renderRain(d,lt,sc.text);
+ else if(d.t==="phone")renderPhone(d,lt,sc.text);
+ else if(d.t==="stamp")renderStamp(d,lt,sc.text);
+ else if(d.t==="seal")renderSeal(d,lt,sc.text);
+ else if(d.t==="glitch")renderGlitch(d,lt,sc.text);
+ else if(d.t==="stop")renderStop(lt);
+ else if(d.t==="check")renderCheck(lt);
+ else if(d.t==="shield")renderShield(d,lt,sc.text);
+ else if(d.t==="brand")renderBrand(lt);
+ else if(d.t==="cta")renderCta(lt);
+};
+window.__ready=true;
+</script></body></html>
