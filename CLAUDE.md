@@ -60,3 +60,6 @@ Pendente:
   semana (motores HTML + scripts narrar/render/trilha/montar + logo da Gold Marks). Usuário
   perguntou preço de voz melhor: indicado ElevenLabs (Starter ~US$6/mês, API). Removido o símbolo
   ® de uma logo (Café Agro Conilon) a pedido.
+- **27/11/2026** — Instalada a skill `find-skills` (vercel-labs/skills) para buscar/instalar skills
+  do ecossistema `npx skills` (skills.sh). Copiada para `.claude/skills/find-skills/` para persistir
+  entre sessões (instalação global `-g` some quando o container é apagado).
