@@ -63,3 +63,10 @@ Pendente:
 - **27/11/2026** — Instalada a skill `find-skills` (vercel-labs/skills) para buscar/instalar skills
   do ecossistema `npx skills` (skills.sh). Copiada para `.claude/skills/find-skills/` para persistir
   entre sessões (instalação global `-g` some quando o container é apagado).
+- **27/11/2026** — Instalada a skill de design `impeccable` (pbakaus/impeccable) em
+  `.claude/skills/impeccable/` (cópia manual do GitHub: o `npx impeccable install` falha porque a rede
+  bloqueia impeccable.style; o motor binário baixa sozinho do GitHub na 1ª execução). Hook de design
+  NÃO instalado de propósito (roda em toda edição, inclusive nas tarefas agendadas). Rodado `init` →
+  `PRODUCT.md` (uso: posts, sites e vídeos; diferencial das marcas ainda não definido).
+  Também adicionado nesta sessão o marketplace de plugins `obra/superpowers-marketplace` (só no
+  container, nenhum plugin instalado).
